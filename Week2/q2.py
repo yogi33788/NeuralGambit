@@ -160,19 +160,34 @@ class History:
 
     def is_win(self):
         # Feel free to implement this in anyway if needed
-        pass
+        if sum(self.check_active_boards()) == 0:
+            return self.get_current_player()   
+        return None
 
     def get_valid_actions(self):
         # Feel free to implement this in anyway if needed
-        pass
+        a = []
+        b = self.check_active_boards()
+        for i in range(self.num_boards):
+            if b[i] == 0:
+                continue
+            elif b[i] == 1:
+                for j in range(9):
+                    if self.boards[i][j] == '0':
+                        a.append((i*9)+j)
+        return a
 
     def is_terminal_history(self):
         # Feel free to implement this in anyway if needed
-        pass
+        return self.is_win() is not None
 
     def get_value_given_terminal_history(self):
         # Feel free to implement this in anyway if needed
-        pass
+        winner = self.is_win()
+        if winner == 1:
+            return 1
+        else:
+            return -1
 
 
 def alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
@@ -190,8 +205,42 @@ def alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
     global visited_histories_list
     visited_histories_list.append(history_obj.history)
     # TODO implement
-    return -2
-    # TODO implement
+
+    if history_obj.is_terminal_history():
+        return history_obj.get_value_given_terminal_history()
+
+    actions = history_obj.get_valid_actions()
+    ordered_actions=[]
+    for action in actions:
+        if action%9 == 4:
+            ordered_actions.append(action)
+    for action in actions:
+        if action%9 == 0 or action%9 == 2 or action%9 == 6 or action%9 ==8:
+            ordered_actions.append(action)
+    for action in actions:
+        if action%9 == 1 or action%9 ==3 or action%9 == 5 or action%9 == 7:
+            ordered_actions.append(action)
+
+    if max_player_flag:
+        alp=-math.inf
+        for action in ordered_actions:
+            branch = History(num_boards=history_obj.num_boards,history=history_obj.history+[action])
+            alp = max(alp,alpha_beta_pruning(branch,alpha,beta,False))
+            alpha = max(alpha,alp)
+            if alpha >= beta:
+                break
+        return alp
+    else:
+        bet=math.inf
+        for action in ordered_actions:
+            branch = History(num_boards=history_obj.num_boards,history=history_obj.history+[action])
+            bet = min(bet,alpha_beta_pruning(branch,alpha,beta,True))
+            beta = min(bet,beta)
+            if alpha >= beta:
+                break
+        return bet
+
+   # TODO implement
 
 
 def maxmin(history_obj, max_player_flag):
@@ -207,7 +256,29 @@ def maxmin(history_obj, max_player_flag):
     # the key corresponding to self.boards.
     global board_positions_val_dict
     # TODO implement
-    return -2
+    
+    if history_obj.is_terminal_history():
+        return history_obj.get_value_given_terminal_history()
+    
+    st = history_obj.get_boards_str()
+    if st in board_positions_val_dict:
+        return board_positions_val_dict[st]
+    
+    actions = history_obj.get_valid_actions()
+    if max_player_flag:
+        val =-math.inf
+        for action in actions:
+            branch=History(num_boards=history_obj.num_boards,history=history_obj.history+[action])
+            val=max(val,maxmin(branch,False))
+    else:
+        val=math.inf
+        for action in actions:
+            branch=History(num_boards=history_obj.num_boards,history=history_obj.history+[action])
+            val = min(val,maxmin(branch,True))
+    
+    board_positions_val_dict[st]=val
+    return val
+    
     # TODO implement
 
 
